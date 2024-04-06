@@ -1,19 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 
-const DropdownSelector = (props) => {
+interface DropdownSelectorProps {
+  className: string;
+  options: string[];
+  onSelectionChange?: (selectedValue: string) => void;
+}
+
+const DropdownSelector: React.FC<DropdownSelectorProps> = (props) => {
   // State to store the selected value
-  const [selectedValue, setSelectedValue] = useState('');
+  const [selectedValue, setSelectedValue] = useState<string>('');
 
   // Handler function to update the selected value
-  const handleSelectChange = (event) => {
-
-    setSelectedValue(event.target.value);
-    console.log(event.target.value,"chil")
+  const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const selectedValue = event.target.value;
+    setSelectedValue(selectedValue);
+    console.log(selectedValue, "chil");
 
     // Assuming the parent function is named `onSelectionChange`
     if (props.onSelectionChange) {
-        console.log("in function block",typeof(props.onSelectionChange))
-      props.onSelectionChange(event.target.value); // Pass the selected value
+      console.log("in function block", typeof (props.onSelectionChange));
+      props.onSelectionChange(selectedValue); // Pass the selected value
     }
   };
 
