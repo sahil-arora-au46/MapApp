@@ -33,7 +33,7 @@ const DropdownSelector: React.FC<DropdownSelectorProps> = (props) => {
         <option value="" disabled>Draw Shapes</option>
         {props.options.map((option) => (
           <option key={option} value={option}>
-            {option === 'LinearRing' ? 'Line' : option} // Display 'Line' instead of 'LinearRing' for better readability
+            {option === 'LinearRing' ? 'Line' : option}
           </option>
         ))}
       </select>

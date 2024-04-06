@@ -1,6 +1,7 @@
 import { Draw } from 'ol/interaction';
 import VectorSource from 'ol/source/Vector';
 import { getLength, getArea } from 'ol/sphere';
+import Map from 'ol/Map';
 
 // Define a function to get the user's current geolocation coordinates
 export const getUserCoordinates = (): Promise<{ latitude: number; longitude: number }> => {
