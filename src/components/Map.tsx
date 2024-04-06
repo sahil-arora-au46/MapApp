@@ -6,62 +6,31 @@ import OSM from 'ol/source/OSM.js';
 import TileLayer from 'ol/layer/Tile.js';
 import View from 'ol/View.js';
 import { useGeographic } from 'ol/proj';
-import { getUserCoordinates } from '../helper/mapHelper';
+import { getUserCoordinates, drawShape } from '../helper/mapHelper';
 import { Feature } from 'ol';
 import Point from 'ol/geom/Point';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from "ol/source/Vector";
-import { Draw } from 'ol/interaction';
 import DropdownSelector from "./Selector";
-import { getLength, getArea } from 'ol/sphere';
 
 export default function MapComponent() {
+    // Create a reference to the map element 
     const mapElementRef = useRef<HTMLDivElement | null>(null);
+    // State to store the user's coordinates
     const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number }>({ latitude: 0, longitude: 0 });
+    // State to store the map instance
     const [map, setMap] = useState<Map | null>(null);
+    // State to store the vector source for drawing shapes
     const [vectorSource, setVectorSource] = useState<VectorSource | null>(null);
 
-    function drawShape(map: Map, vectorSource: VectorSource, shape: string) {
-        if (!map || !vectorSource) {
-            console.error('Map or vectorSource is not initialized');
-            return;
-        }
-        const draw = new Draw({
-            source: vectorSource,
-            type: shape as import("ol/geom/Geometry").Type,
-        });
-        map.addInteraction(draw);
-        draw.on('drawend', (event) => {
-            const feature = event.feature;
-            const geometry = feature.getGeometry();
-            if (!geometry) {
-                console.error('Geometry is undefined');
-                return;
-            }
-            const geometryType = geometry.getType();
-            const transformedGeometry = geometry.clone().transform('EPSG:4326', 'EPSG:3857');
-            let measurement;
-            if (geometryType === 'Polygon') {
-                measurement = getArea(transformedGeometry);
-                alert(`Area: ${measurement.toFixed(2)} square meters`);
-            } else if (geometryType === 'LineString') {
-                measurement = getLength(transformedGeometry);
-                alert(`Length: ${measurement.toFixed(2)} meters`);
-            }
-        });
-    }
-
-    function removeShape(vectorSource: VectorSource) {
-        vectorSource.clear();
-    }
-
+    // Options for the dropdown selector
     let options: string[] = ["Point", "LineString", 'Polygon'];
 
+    // Effect hook to fetch user coordinates 
     useEffect(() => {
         async function fetchUserCoordinates() {
             try {
                 const coords = await getUserCoordinates();
-                console.log(coords, "from promise");
                 setCoordinates(coords);
             } catch (error) {
                 console.error('Error getting user coordinates:', error);
@@ -70,7 +39,10 @@ export default function MapComponent() {
         fetchUserCoordinates();
     }, []);
 
+    // Set the projection to geographic (EPSG:4326)
     useGeographic();
+
+    // Effect hook to initialize the map and add a marker when coordinates are available
     useEffect(() => {
         if (mapElementRef.current && coordinates.latitude !== 0 && coordinates.longitude !== 0) {
             mapElementRef.current.style.width = '100%';
@@ -88,31 +60,40 @@ export default function MapComponent() {
                 }),
             });
 
+            // Create a marker feature at the user's coordinates
             const marker = new Feature({
                 geometry: new Point([coordinates.longitude, coordinates.latitude])
             });
+            // Create a vector source with the marker
             const vectorSource = new VectorSource({ features: [marker] });
+            // Create a vector layer with the vector source
             const vectorLayer = new VectorLayer({
                 source: vectorSource,
             });
+            // Update the map and vector source states
             setMap(map);
             setVectorSource(vectorSource);
+            // Add the vector layer to the map
             map.addLayer(vectorLayer);
         }
     }, [coordinates]);
+
+    // Handler for when the dropdown selection changes
     const handleSelectionChange = (shape: string) => {
-        console.log(shape, "from function");
-        console.log('Selected shape: from parent ', shape);
+        // Call drawShape with the current map, vector source, and the selected shape
         drawShape(map!, vectorSource!, shape);
     };
 
+    // Render the map component
     return (
         <>
+            {/* Dropdown selector for shape selection */}
             <DropdownSelector
                 options={options}
                 onSelectionChange={handleSelectionChange}
-                className="z-50 right-10 top-25 border-2 border-black rounded-md p-2"
+                className="absolute z-50 right-10 top-25 border-2 border-black rounded-md p-2"
             />
+            {/* Div element to hold the map */}
             <div ref={mapElementRef} style={{ width: '100%', height: '100vh' }}></div>
         </>
     );
